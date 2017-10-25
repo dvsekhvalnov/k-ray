@@ -11,12 +11,27 @@ type Config struct {
 	// if not exists will be auto-created on start
 	DataDir string
 
-	//HTTP port to start embedded web interface
+	// HTTP port to start embedded web interface
 	Port string
+
+	// Internal message processing spool configuration
+	Spool struct {
+
+		// Spool queue size
+		Size int
+
+		// Number of concurrent workers processing spool queue
+		MaxWorkers int
+	}
 }
 
 func NewConfig() *Config {
-	return &Config{
+	cfg := &Config{
 		Config: agent.NewConfig(),
 	}
+
+	cfg.Spool.Size = 100
+	cfg.Spool.MaxWorkers = 3
+
+	return cfg
 }

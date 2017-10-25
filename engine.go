@@ -51,14 +51,14 @@ func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error)
 
 func Persist(in <-chan *sarama.ConsumerMessage, engine *Engine) <-chan *sarama.ConsumerMessage {
 	out := make(chan *sarama.ConsumerMessage)
-	spool := make(chan *db.Message, 100)       //TODO: cfg.Spool.Size
-	dispatcher := pool.NewDispatcher(spool, 3) //TODO: cfg.Spool.MaxWorkers
+	spool := make(chan *db.Message, engine.cfg.Spool.Size)
+	dispatcher := pool.NewDispatcher(spool, engine.cfg.Spool.MaxWorkers)
 
 	dispatcher.Start(func(msg *db.Message) {
 		err := engine.Db.Save(msg)
 
 		if err != nil {
-			Log.Printf("[ERROR] Unable to save incoming message.Skipping. Error=", err)
+			Log.Printf("[ERROR] Unable to save incoming message. Skipping. Error=", err)
 		}
 	})
 
