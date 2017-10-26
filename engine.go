@@ -2,6 +2,7 @@ package engine
 
 import (
 	"github.com/Shopify/Sarama"
+	"github.com/dgraph-io/badger"
 	"github.com/dvsekhvalnov/k-ray/db"
 	. "github.com/dvsekhvalnov/k-ray/log"
 	"github.com/dvsekhvalnov/k-ray/pool"
@@ -33,8 +34,8 @@ func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error)
 
 		offset, err := engine.Db.FindOffset(partition.Topic, partition.ID)
 
-		if err != nil {
-			Log.Printf("[DEBUG] Unable to fetch offset for topic=%v, partition=%v", partition.Topic, partition.ID)
+		if err != nil && err != badger.ErrKeyNotFound {
+			Log.Printf("[DEBUG] There was an error while fetching offset for topic=%v, partition=%v, error=%v\n", partition.Topic, partition.ID, err)
 			return -1 //Fetch from beginning
 		}
 

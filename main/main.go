@@ -8,6 +8,7 @@ import (
 	"github.com/dvsekhvalnov/k-ray"
 	. "github.com/dvsekhvalnov/k-ray/log"
 	"github.com/dvsekhvalnov/k-ray/rest"
+	"github.com/dvsekhvalnov/sync4kafka"
 )
 
 func start() {
@@ -18,6 +19,7 @@ func start() {
 	cfg.ConsumerGroup = "k-ray-agent"
 	cfg.DataDir = "./data"
 	cfg.Port = ":8080"
+	cfg.Include("local.auditLog")
 
 	engine := engine.NewEngine()
 	defer engine.Close()
@@ -27,7 +29,17 @@ func start() {
 	api.Start(cfg)
 
 	//main loop
+	// quit := make(chan bool)
 	if messages, err := engine.Start(cfg); err == nil {
+		// <-quit
+		// for {
+		// 			select {
+		// 			case <-msg:
+		// 			case <-quit:
+		// 				return
+		// 			}
+		//
+		// 		}
 		for msg := range messages {
 			if msg != nil {
 				fmt.Printf("Pass through msg: %v, paritition: %v, offset: %v, msg:%v\n", msg.Topic, msg.Partition, msg.Offset, string(msg.Value))
@@ -40,7 +52,7 @@ func start() {
 
 func main() {
 	Log = log.New(os.Stdout, "[K-RAY] [INFO] ", log.LstdFlags)
-	// agent.Log = log.New(os.Stdout, "[sync4kafka] [INFO] ", log.LstdFlags)
+	agent.Log = log.New(os.Stdout, "[sync4kafka] [INFO] ", log.LstdFlags)
 
 	start()
 }
