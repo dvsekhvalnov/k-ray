@@ -18,7 +18,6 @@ func (c *EventsSearchController) Register(mux *CtxMux) {
 }
 
 func (c *EventsSearchController) SearchMessages(ctx *WebContext, w http.ResponseWriter, req *http.Request) (interface{}, int, error) {
-
 	search := db.SearchRequest{}
 
 	if err := json.NewDecoder(req.Body).Decode(&search); err != nil {
@@ -54,6 +53,14 @@ func (c *EventsSearchController) SearchMessages(ctx *WebContext, w http.Response
 	if search.Paging.Limit == 0 {
 		search.Paging.Limit = 50
 	}
+
+	Log.Println("Search request")
+	Log.Println("earliset", search.Earliest)
+	Log.Println("latest", search.Latest)
+	Log.Println("limit", search.Paging.Limit)
+	Log.Println("pages requested", search.Paging.Pages)
+	Log.Println("page", search.Page)
+	Log.Println("offset", search.Offset)
 
 	response, err := ctx.engine.Db.SearchMessagesByTime(&search)
 

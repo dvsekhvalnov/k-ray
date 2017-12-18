@@ -43,6 +43,10 @@ func (action Action) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 func Int32Param(name string, req *http.Request) (int32, error) {
 	val, err := strconv.ParseInt(pat.Param(req, name), 10, 32)
 

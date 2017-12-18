@@ -103,13 +103,18 @@ func (db *DB) SaveMessage(msg *Message) error {
 
 func (db *DB) SearchMessagesByTime(search *SearchRequest) (*SearchResponse, error) {
 	result := &SearchResponse{
-		Rows: make([]*Message, 0),
+		Rows:     make([]*Message, 0),
+		Earliest: Millis(search.Earliest),
+		Latest:   Millis(search.Latest),
 	}
 
 	start := search.Offset
+	skip := 0
 
+	//no offset given, scan from beginning, skip rows according to paging requested
 	if len(start) == 0 {
 		start = Key(TimestampIndex, Int64ToBytes(search.Earliest))
+		skip = search.SkipRows()
 	}
 
 	end := Key(TimestampIndex, Int64ToBytes(search.Latest))
@@ -126,7 +131,7 @@ func (db *DB) SearchMessagesByTime(search *SearchRequest) (*SearchResponse, erro
 			return current[len(end):]
 		}
 
-		refs := keyRangeScan(txn, search.SkipRows(), start, end, prefix, ref, paginate(search, result))
+		refs := keyRangeScan(txn, skip, start, end, prefix, ref, paginate(search, result))
 		result.Total = len(refs)
 
 		fetchAll(txn, refs, search.Paging.Limit,
@@ -143,11 +148,6 @@ func (db *DB) SearchMessagesByTime(search *SearchRequest) (*SearchResponse, erro
 	})
 
 	result.Took = Millis(int64(time.Since(startInstant)))
-
-	if len(result.Rows) > 0 {
-		result.Earliest = Millis(result.Rows[0].Timestamp)
-		result.Latest = Millis(result.Rows[len(result.Rows)-1].Timestamp)
-	}
 
 	if err != nil {
 		return nil, err

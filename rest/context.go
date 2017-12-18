@@ -5,6 +5,7 @@ import (
 
 	"github.com/dvsekhvalnov/k-ray"
 	. "github.com/dvsekhvalnov/k-ray/log"
+	"github.com/rs/cors"
 	"github.com/unrolled/render"
 )
 
@@ -26,7 +27,7 @@ func NewWebContext(engine *engine.Engine) *WebContext {
 	events := &EventsSearchController{}
 
 	mux := NewMux(ctx)
-	ctx.server.Handler = mux
+	ctx.server.Handler = cors.Default().Handler(mux)
 
 	topics.Register(mux)
 	events.Register(mux)

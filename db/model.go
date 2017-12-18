@@ -1,14 +1,16 @@
 package db
 
 import (
+	"strconv"
+
 	"github.com/Shopify/Sarama"
 	"github.com/vmihailenco/msgpack"
 )
 
-type PageOffset struct {
-	Page   int    `json:"page"`
-	Offset []byte `json:"offset"`
-}
+// type PageOffset struct {
+// 	Page   int    `json:"page"`
+// 	Offset []byte `json:"offset"`
+// }
 
 type Paging struct {
 	Limit int   `json:"limit"`
@@ -25,13 +27,13 @@ type SearchRequest struct {
 }
 
 type SearchResponse struct {
-	Total    int           `json:"total"`
-	Earliest int64         `json:"earliest"`
-	Latest   int64         `json:"latest"`
-	Rows     []*Message    `json:"rows"`
-	Offsets  []*PageOffset `json:"offsets"`
-	Took     int64         `json:"took"`
-	TimedOut bool          `json:"timedOut"`
+	Total    int               `json:"total"`
+	Earliest int64             `json:"earliest"`
+	Latest   int64             `json:"latest"`
+	Rows     []*Message        `json:"rows"`
+	Offsets  map[string][]byte `json:"offsets"`
+	Took     int64             `json:"took"`
+	TimedOut bool              `json:"timedOut"`
 }
 
 func (r *SearchResponse) TotalPages() int {
@@ -44,13 +46,10 @@ func (r *SearchResponse) TotalPages() int {
 
 func (r *SearchResponse) AddOffset(page int, offset []byte) {
 	if r.Offsets == nil {
-		r.Offsets = make([]*PageOffset, 0)
+		r.Offsets = make(map[string][]byte)
 	}
 
-	r.Offsets = append(r.Offsets, &PageOffset{
-		Page:   page,
-		Offset: offset,
-	})
+	r.Offsets[strconv.Itoa(page)] = offset
 }
 
 func (r *SearchRequest) SkipRows() int {

@@ -90,7 +90,7 @@ func keyRangeScan(txn *badger.Txn,
 			result = append(result, CopyBytes(ref(start, end, key, keyIdx)))
 		}
 
-		//let caller chance to paginate or do whater
+		//let caller chance to paginate or do whatever
 		paginate(keyIdx, key)
 
 		keyIdx++
