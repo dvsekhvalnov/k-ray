@@ -10,8 +10,10 @@ import (
 )
 
 type Engine struct {
-	cfg *Config
-	Db  db.Datastore
+	cfg         *Config
+	Db          db.Datastore
+	Enrichment  EnrichmentPipeline
+	lookupTable LookupTable
 }
 
 func (engine *Engine) Close() {
@@ -19,7 +21,9 @@ func (engine *Engine) Close() {
 }
 
 func NewEngine() *Engine {
-	return &Engine{}
+	return &Engine{
+		Enrichment: EnrichmentPipeline{},
+	}
 }
 
 func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error) {
@@ -52,11 +56,19 @@ func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error)
 
 func Persist(in <-chan *sarama.ConsumerMessage, engine *Engine) <-chan *sarama.ConsumerMessage {
 	out := make(chan *sarama.ConsumerMessage)
-	spool := make(chan *db.Message, engine.cfg.Spool.Size)
-	dispatcher := pool.NewDispatcher(spool, engine.cfg.Spool.MaxWorkers)
 
-	dispatcher.Start(func(msg *db.Message) {
-		err := engine.Db.Save(msg)
+	encrichmentSpool := make(chan *db.Message, engine.cfg.Spool.Size)
+	encrichmentDispatcher := pool.NewDispatcher(encrichmentSpool, engine.cfg.Spool.MaxWorkers)
+
+	persistSpool := make(chan *db.Message, engine.cfg.Spool.Size)
+	persistDispatcher := pool.NewDispatcher(persistSpool, engine.cfg.Spool.MaxWorkers)
+
+	encrichmentDispatcher.Start(func(msg *db.Message) {
+		persistSpool <- engine.Enrichment.Process(msg)
+	})
+
+	persistDispatcher.Start(func(msg *db.Message) {
+		err := engine.Db.SaveMessage(msg)
 
 		if err != nil {
 			Log.Printf("[ERROR] Unable to save incoming message. Skipping. Error=", err)
@@ -65,14 +77,14 @@ func Persist(in <-chan *sarama.ConsumerMessage, engine *Engine) <-chan *sarama.C
 
 	go func() {
 		defer close(out)
-		defer dispatcher.Stop()
-		defer close(spool)
+		defer persistDispatcher.Stop()
+		defer close(persistSpool)
 
 		for msg := range in {
 			out <- msg
 
 			if msg != nil {
-				spool <- db.NewMessage(msg)
+				encrichmentSpool <- db.NewMessage(msg)
 			}
 		}
 

@@ -62,3 +62,21 @@ func Int64Param(name string, req *http.Request) (int64, error) {
 
 	return val, nil
 }
+
+func Int64QueryParam(name string, req *http.Request) (int64, error) {
+	if param, ok := req.URL.Query()[name]; ok {
+		val, err := strconv.ParseInt(param[0], 10, 64)
+
+		if err != nil {
+			return 0, err
+		}
+
+		return val, nil
+	}
+
+	return 0, nil
+}
+
+func BadRequest() (interface{}, int, error) {
+	return nil, http.StatusBadRequest, nil
+}

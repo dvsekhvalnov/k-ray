@@ -5,27 +5,97 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
+type PageOffset struct {
+	Page   int    `json:"page"`
+	Offset []byte `json:"offset"`
+}
+
+type Paging struct {
+	Limit int   `json:"limit"`
+	Pages []int `json:"pages"`
+}
+
+type SearchRequest struct {
+	Search   string  `json:"search"`
+	Earliest int64   `json:"earliest"`
+	Latest   int64   `json:"search.Latest"`
+	Page     int     `json:"page"`
+	Offset   []byte  `json:"offset"`
+	Paging   *Paging `json:"paging"`
+}
+
+type SearchResponse struct {
+	Total    int           `json:"total"`
+	Earliest int64         `json:"earliest"`
+	Latest   int64         `json:"latest"`
+	Rows     []*Message    `json:"rows"`
+	Offsets  []*PageOffset `json:"offsets"`
+	Took     int64         `json:"took"`
+	TimedOut bool          `json:"timedOut"`
+}
+
+func (r *SearchResponse) TotalPages() int {
+	if r.Offsets != nil {
+		return len(r.Offsets)
+	}
+
+	return 0
+}
+
+func (r *SearchResponse) AddOffset(page int, offset []byte) {
+	if r.Offsets == nil {
+		r.Offsets = make([]*PageOffset, 0)
+	}
+
+	r.Offsets = append(r.Offsets, &PageOffset{
+		Page:   page,
+		Offset: offset,
+	})
+}
+
+func (r *SearchRequest) SkipRows() int {
+	return (r.Page - 1) * r.Paging.Limit
+}
+
+type Tag struct {
+	Value   string `json:"value"`
+	Details string `json:"details,omitempty"`
+}
+
+type BinaryData struct {
+	Value []byte `json:"value"`
+	Size  int    `json:"size"`
+}
+
 type Message struct {
-	Key            []byte `json:"key"`
-	Value          []byte `json:"value"`
-	Topic          string `json:"topic"`
-	Partition      int32  `json:"partition"`
-	Offset         int64  `json:"offset"`
-	Timestamp      int64  `json:"timestamp"`
-	BlockTimestamp int64  `json:"blockTimestamp"`
-	Size           int    `json:"size"`
+	Key            BinaryData     `json:"key"`
+	Value          BinaryData     `json:"value"`
+	Topic          string         `json:"topic"`
+	Partition      int32          `json:"partition"`
+	Offset         int64          `json:"offset"`
+	Timestamp      int64          `json:"timestamp"`
+	BlockTimestamp int64          `json:"blockTimestamp"`
+	Type           string         `json:"type"`
+	Tags           map[string]Tag `json:"tags"`
+}
+
+func (m *Message) AddTag(tag, value, details string) {
+	if m.Tags == nil {
+		m.Tags = make(map[string]Tag)
+	}
+
+	m.Tags[tag] = Tag{Value: value, Details: details}
 }
 
 func NewMessage(msg *sarama.ConsumerMessage) *Message {
 	return &Message{
-		Key:            msg.Key,
-		Value:          msg.Value,
+		Key:            BinaryData{Value: msg.Key, Size: len(msg.Key)},
+		Value:          BinaryData{Value: msg.Value, Size: len(msg.Value)},
 		Topic:          msg.Topic,
 		Partition:      msg.Partition,
 		Offset:         msg.Offset,
 		Timestamp:      msg.Timestamp.UnixNano(),
 		BlockTimestamp: msg.BlockTimestamp.UnixNano(),
-		Size:           len(msg.Value),
 	}
 }
 

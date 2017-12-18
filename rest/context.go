@@ -22,10 +22,14 @@ func NewWebContext(engine *engine.Engine) *WebContext {
 		server: &http.Server{},
 	}
 
+	topics := &TopicsController{}
+	events := &EventsSearchController{}
+
 	mux := NewMux(ctx)
 	ctx.server.Handler = mux
 
-	Register(mux)
+	topics.Register(mux)
+	events.Register(mux)
 
 	return ctx
 }

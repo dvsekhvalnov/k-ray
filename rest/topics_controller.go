@@ -7,11 +7,14 @@ import (
 	"goji.io/pat"
 )
 
-func Register(mux *CtxMux) {
-	mux.Handle(pat.Get("/topics/:topic/partitions/:partition/offset/:offset"), FetchMessage)
+type TopicsController struct {
 }
 
-func FetchMessage(ctx *WebContext, w http.ResponseWriter, req *http.Request) (interface{}, int, error) {
+func (c *TopicsController) Register(mux *CtxMux) {
+	mux.Handle(pat.Get("/topics/:topic/partitions/:partition/offset/:offset"), c.FetchMessage)
+}
+
+func (c *TopicsController) FetchMessage(ctx *WebContext, w http.ResponseWriter, req *http.Request) (interface{}, int, error) {
 
 	topic := pat.Param(req, "topic")
 	partition, err := Int32Param("partition", req)
