@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/dvsekhvalnov/k-ray"
+	"github.com/dvsekhvalnov/k-ray/assets"
 	. "github.com/dvsekhvalnov/k-ray/log"
 	"github.com/rs/cors"
 	"github.com/unrolled/render"
+	"goji.io/pat"
 )
 
 type WebContext struct {
@@ -27,10 +29,18 @@ func NewWebContext(engine *engine.Engine) *WebContext {
 	events := &EventsSearchController{}
 
 	mux := NewMux(ctx)
+
+	//CORS
 	ctx.server.Handler = cors.Default().Handler(mux)
 
+	//API
 	topics.Register(mux)
 	events.Register(mux)
+
+	//static UI app (js, css, e.t.c.)
+	assets := assets.FS(false)
+	mux.Mux.Handle(pat.Get("/:file.:ext"), http.FileServer(assets))
+	mux.Mux.Handle(pat.Get("/*"), NewAssetHandler(assets, "/index.html"))
 
 	return ctx
 }

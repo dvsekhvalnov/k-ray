@@ -3,8 +3,10 @@ package db
 import (
 	"bytes"
 	"os"
+	"time"
 
 	"github.com/dgraph-io/badger"
+	humanize "github.com/dustin/go-humanize"
 	. "github.com/dvsekhvalnov/k-ray/log"
 )
 
@@ -36,6 +38,10 @@ func (db *DB) Close() {
 
 func Open(dir string) (*DB, error) {
 
+	Log.Println("Opening database at:", dir)
+
+	startInstant := time.Now()
+
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		Log.Printf("Didn't find data dir:'%v'. Creating.\n", dir)
 		err = os.MkdirAll(dir, 0755)
@@ -55,12 +61,14 @@ func Open(dir string) (*DB, error) {
 		return nil, err
 	}
 
-	Log.Println("Succesully open database at:", dir)
+	duration := humanize.RelTime(startInstant, time.Now(), "", "")
+	Log.Println("Succesully opened database at:", dir, " in:", duration)
 
 	return &DB{db}, nil
 }
 
 func keyRangeScan(txn *badger.Txn,
+	reverse bool,
 	skip int,
 	start, end []byte,
 	prefix, ref Lookup,
@@ -68,6 +76,7 @@ func keyRangeScan(txn *badger.Txn,
 
 	opts := badger.DefaultIteratorOptions
 	opts.PrefetchValues = false
+	opts.Reverse = reverse
 	it := txn.NewIterator(opts)
 
 	result := make([][]byte, 0)
@@ -80,9 +89,15 @@ func keyRangeScan(txn *badger.Txn,
 
 		partitial := prefix(start, end, key, keyIdx)
 
-		//scan till the end
-		if bytes.Compare(partitial, end) >= 0 {
-			break
+		//scan till the end, reverse (< and >)
+		if reverse {
+			if bytes.Compare(partitial, end) <= 0 {
+				break
+			}
+		} else {
+			if bytes.Compare(partitial, end) >= 0 {
+				break
+			}
 		}
 
 		//skip number of rows to support paging
@@ -116,7 +131,12 @@ func paginate(search *SearchRequest, result *SearchResponse) func(keyIndex int, 
 	return func(keyIndex int, key []byte) {
 		if keyIndex%limit == 0 {
 
-			page := (keyIndex / limit) + startPage
+			page := (keyIndex / limit) + 1
+
+			//advance page number if we not scanning (using offset)
+			if len(search.Offset) > 0 {
+				page = page + startPage - 1
+			}
 
 			if len(pages) == 0 || Contains(pages, page) {
 				result.AddOffset(page, CopyBytes(key))

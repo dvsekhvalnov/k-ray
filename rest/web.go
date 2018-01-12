@@ -37,7 +37,14 @@ func (action Action) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(status), status)
 		}
 	} else if body != nil {
-		action.WebContext.JSON(w, status, body)
+		switch body.(type) {
+		case string:
+			action.WebContext.Text(w, status, body.(string))
+		case []byte:
+			action.WebContext.Data(w, status, body.([]byte))
+		default:
+			action.WebContext.JSON(w, status, body)
+		}
 	} else {
 		w.WriteHeader(status)
 	}

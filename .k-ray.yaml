@@ -1,0 +1,5 @@
+agent:
+  brokerUrl: 127.0.0.1:9092
+  brokerAdvertisedUrl: 127.0.0.1:9092
+
+port: ':8081'

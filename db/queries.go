@@ -103,21 +103,25 @@ func (db *DB) SaveMessage(msg *Message) error {
 
 func (db *DB) SearchMessagesByTime(search *SearchRequest) (*SearchResponse, error) {
 	result := &SearchResponse{
-		Rows:     make([]*Message, 0),
-		Earliest: Millis(search.Earliest),
-		Latest:   Millis(search.Latest),
+		Rows:       make([]*Message, 0),
+		Earliest:   Millis(search.Earliest),
+		Latest:     Millis(search.Latest),
+		Page:       search.Page,
+		OffsetUsed: true,
 	}
 
 	start := search.Offset
 	skip := 0
 
+	//TODO: start, skip, result.OffsetUsed = from(search, TimestampIndex)
 	//no offset given, scan from beginning, skip rows according to paging requested
 	if len(start) == 0 {
-		start = Key(TimestampIndex, Int64ToBytes(search.Earliest))
+		result.OffsetUsed = false
+		start = Key(TimestampIndex, Int64ToBytes(search.Latest)) //FROM (Swap if scanning forward)
 		skip = search.SkipRows()
 	}
 
-	end := Key(TimestampIndex, Int64ToBytes(search.Latest))
+	end := Key(TimestampIndex, Int64ToBytes(search.Earliest)) //TO (Swap if scanning forward)
 
 	startInstant := time.Now()
 
@@ -131,8 +135,20 @@ func (db *DB) SearchMessagesByTime(search *SearchRequest) (*SearchResponse, erro
 			return current[len(end):]
 		}
 
-		refs := keyRangeScan(txn, skip, start, end, prefix, ref, paginate(search, result))
+		Log.Println("[DEBUG] Skipping rows:", skip)
+
+		refs := keyRangeScan(txn, true, skip, start, end, prefix, ref, paginate(search, result))
 		result.Total = len(refs)
+
+		Log.Println("[DEBUG] Found refs:", result.Total)
+
+		//adjust total by adding skipped rows if we found something
+		//otherwise wrong page probably was requested, return zero as total
+		if result.Total > 0 {
+			result.Total = result.Total + search.SkipRows()
+		} else {
+			result.CleanOffsets()
+		}
 
 		fetchAll(txn, refs, search.Paging.Limit,
 			func(ref []byte) []byte {

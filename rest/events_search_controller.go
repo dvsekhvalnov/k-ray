@@ -50,6 +50,12 @@ func (c *EventsSearchController) SearchMessages(ctx *WebContext, w http.Response
 		}
 	}
 
+	if len(search.Paging.Pages) == 0 {
+		for i := 0; i < 10; i++ {
+			search.Paging.Pages = append(search.Paging.Pages, search.Page+i)
+		}
+	}
+
 	if search.Paging.Limit == 0 {
 		search.Paging.Limit = 50
 	}

@@ -34,7 +34,7 @@ func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error)
 		return nil, err
 	}
 
-	cfg.FetchOffsets = func(partition *agent.PartitionInfo) int64 {
+	cfg.Agent.FetchOffsets = func(partition *agent.PartitionInfo) int64 {
 
 		offset, err := engine.Db.FindOffset(partition.Topic, partition.ID)
 
@@ -51,7 +51,7 @@ func (engine *Engine) Start(cfg *Config) (<-chan *sarama.ConsumerMessage, error)
 	engine.cfg = cfg
 	engine.Db = db
 
-	return Persist(agent.Sync(engine.cfg.Config), engine), nil
+	return Persist(agent.Sync(engine.cfg.Agent), engine), nil
 }
 
 func Persist(in <-chan *sarama.ConsumerMessage, engine *Engine) <-chan *sarama.ConsumerMessage {

@@ -7,11 +7,6 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-// type PageOffset struct {
-// 	Page   int    `json:"page"`
-// 	Offset []byte `json:"offset"`
-// }
-
 type Paging struct {
 	Limit int   `json:"limit"`
 	Pages []int `json:"pages"`
@@ -20,20 +15,22 @@ type Paging struct {
 type SearchRequest struct {
 	Search   string  `json:"search"`
 	Earliest int64   `json:"earliest"`
-	Latest   int64   `json:"search.Latest"`
+	Latest   int64   `json:"latest"`
 	Page     int     `json:"page"`
 	Offset   []byte  `json:"offset"`
 	Paging   *Paging `json:"paging"`
 }
 
 type SearchResponse struct {
-	Total    int               `json:"total"`
-	Earliest int64             `json:"earliest"`
-	Latest   int64             `json:"latest"`
-	Rows     []*Message        `json:"rows"`
-	Offsets  map[string][]byte `json:"offsets"`
-	Took     int64             `json:"took"`
-	TimedOut bool              `json:"timedOut"`
+	Total      int               `json:"total"`
+	Earliest   int64             `json:"earliest"`
+	Latest     int64             `json:"latest"`
+	Rows       []*Message        `json:"rows"`
+	Page       int               `json:"page"`
+	OffsetUsed bool              `json:"offsetUsed"`
+	Offsets    map[string][]byte `json:"offsets"`
+	Took       int64             `json:"took"`
+	TimedOut   bool              `json:"timedOut"`
 }
 
 func (r *SearchResponse) TotalPages() int {
@@ -42,6 +39,10 @@ func (r *SearchResponse) TotalPages() int {
 	}
 
 	return 0
+}
+
+func (r *SearchResponse) CleanOffsets() {
+	r.Offsets = make(map[string][]byte)
 }
 
 func (r *SearchResponse) AddOffset(page int, offset []byte) {
@@ -79,10 +80,6 @@ type Message struct {
 }
 
 func (m *Message) AddTag(tag, value, details string) {
-	if m.Tags == nil {
-		m.Tags = make(map[string]Tag)
-	}
-
 	m.Tags[tag] = Tag{Value: value, Details: details}
 }
 
@@ -95,6 +92,7 @@ func NewMessage(msg *sarama.ConsumerMessage) *Message {
 		Offset:         msg.Offset,
 		Timestamp:      msg.Timestamp.UnixNano(),
 		BlockTimestamp: msg.BlockTimestamp.UnixNano(),
+		Tags:           make(map[string]Tag),
 	}
 }
 

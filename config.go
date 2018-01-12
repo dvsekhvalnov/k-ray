@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	*agent.Config
+	Agent *agent.Config
 
 	// Path to woking dir where database files will be stored,
 	// if not exists will be auto-created on start
@@ -27,7 +27,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	cfg := &Config{
-		Config: agent.NewConfig(),
+		Agent: agent.NewConfig(),
 	}
 
 	cfg.Spool.Size = 100
