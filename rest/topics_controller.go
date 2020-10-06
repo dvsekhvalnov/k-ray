@@ -37,7 +37,7 @@ func (c *TopicsController) DownloadMessage(ctx *WebContext, w http.ResponseWrite
 		ext := ".json"
 		content := msg.Value.Value
 
-		if msg.Type == "binary" {
+		if msg.Value.Type == "binary" {
 			ext = ".bin"
 			content = []byte(base64.StdEncoding.EncodeToString(msg.Value.Value))
 		}

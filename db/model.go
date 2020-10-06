@@ -65,6 +65,7 @@ type Tag struct {
 type BinaryData struct {
 	Value []byte `json:"value"`
 	Size  int    `json:"size"`
+	Type  string `json:"type"`
 }
 
 type Message struct {
@@ -75,7 +76,6 @@ type Message struct {
 	Offset         int64          `json:"offset"`
 	Timestamp      int64          `json:"timestamp"`
 	BlockTimestamp int64          `json:"blockTimestamp"`
-	Type           string         `json:"type"`
 	Tags           map[string]Tag `json:"tags"`
 }
 

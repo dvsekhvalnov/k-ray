@@ -24,7 +24,7 @@ type BaseEnrichment struct {
 }
 
 func (e *BaseEnrichment) Process(msg *db.Message) *db.Message {
-	if msg.Type == "json" {
+	if msg.Value.Type == "json" {
 		var jsonMsg JsonMessage
 
 		if err := json.Unmarshal(msg.Value.Value, &jsonMsg); err == nil {
