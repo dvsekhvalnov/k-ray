@@ -51,6 +51,13 @@ Bird eye view is shown on diagram below:
 
 <img src="https://github.com/dvsekhvalnov/web-static-content/blob/master/k-ray/k-ray-architecture.png?raw=true" width="600" alt="Adjust timeline" />
 
+The approach provides number of interesting opportunities, like:
+1. time travel, search and explore messages from any time range
+2. examine what's going on a wire with system topics or kafka-stream internal ones
+3. fix and re-stream broker message
+4. backup / restore  development broker to any point of time
+5. and countless other possibilities :)
+
 ## Show me how it looks like?
 Please checkout screenshots from UI interface in frontend part of project: https://github.com/dvsekhvalnov/k-ray-ui
 
