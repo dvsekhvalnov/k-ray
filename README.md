@@ -47,7 +47,9 @@ We started the tool with following goals in mind:
 The main idea is to capture every single message from kafka broker and store in embeddable key-value database.
 Project is leveraging awesome BadgerDB by https://dgraph.io/ as persistent layer: https://github.com/dgraph-io/badger
 
+Bird eye view is shown on diagram below:
 
+<img src="https://github.com/dvsekhvalnov/web-static-content/blob/master/k-ray/k-ray-architecture.png?raw=true" width="600" alt="Adjust timeline" />
 
 ## Show me how it looks like?
 Please checkout screenshots from UI interface in frontend part of project: https://github.com/dvsekhvalnov/k-ray-ui
